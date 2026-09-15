@@ -79,10 +79,11 @@ uv run financial-hub
 
 On first launch, save a FinMind token under **Settings**. The token is stored through `keyring`.
 
-Application data is stored at:
+Application data is stored in the operating system's standard per-user data directory, such as:
 
 ```text
-%LOCALAPPDATA%\IRRCalculator\financial-hub.sqlite3
+Windows: %LOCALAPPDATA%\IRRCalculator\financial-hub.sqlite3
+Linux: ~/.local/share/IRRCalculator/financial-hub.sqlite3
 ```
 
 ## Testing

@@ -4,11 +4,22 @@ from decimal import Decimal
 import pytest
 from sqlalchemy.exc import IntegrityError
 
+from financial_hub import database
 from financial_hub.database import (
     create_database_engine,
     initialize_database,
 )
 from financial_hub.models import Portfolio, Quote, Security
+
+
+def test_app_data_dir_uses_platform_data_directory(monkeypatch, tmp_path):
+    monkeypatch.setattr(
+        database,
+        "user_data_path",
+        lambda app_name, appauthor=None: tmp_path / app_name,
+    )
+
+    assert database.app_data_dir() == tmp_path / "IRRCalculator"
 
 
 def test_foreign_keys_uniqueness_and_positive_quotes(db):

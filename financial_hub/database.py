@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-import os
 import sqlite3
 from pathlib import Path
 
+from platformdirs import user_data_path
 from sqlalchemy import Engine, create_engine, event, inspect, select
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -13,10 +13,9 @@ SCHEMA_VERSION = 1
 
 
 def app_data_dir() -> Path:
-    base = Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local"))
     # Keep this directory stable so existing portfolios remain available when
     # the user-facing application name changes.
-    return base / "IRRCalculator"
+    return user_data_path("IRRCalculator", appauthor=False)
 
 
 def default_database_path() -> Path:

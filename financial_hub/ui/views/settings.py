@@ -83,7 +83,7 @@ class SettingsView(QWidget):
             save_finmind_token(self.token.text())
             self.token.clear()
             QMessageBox.information(
-                self, "FinMind", "Token saved in Windows Credential Manager."
+                self, "FinMind", "Token saved in the system credential store."
             )
         except Exception as error:  # noqa: BLE001 - credential backend boundary
             QMessageBox.warning(
