@@ -53,6 +53,7 @@ def build_application(
         except (AttributeError, OSError):
             pass
     app = QApplication.instance() or QApplication(argv or sys.argv)
+    app.setDesktopFileName("financial-hub")
     app.setApplicationName("Financial Hub")
     # Keep the organization name stable: changing it can change Qt's settings
     # namespace and break integrations that rely on the existing app identity.
