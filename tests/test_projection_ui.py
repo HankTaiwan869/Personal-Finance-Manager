@@ -1,5 +1,7 @@
 from itertools import pairwise
+from unittest.mock import Mock
 
+import pytest
 from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtWebEngineWidgets import QWebEngineView
 from PyQt6.QtWidgets import (
@@ -12,6 +14,7 @@ from PyQt6.QtWidgets import (
     QPushButton,
     QSpinBox,
 )
+from pytestqt.exceptions import TimeoutError
 
 from financial_hub.models import Portfolio
 from financial_hub.ui.main_window import MainWindow
@@ -75,22 +78,63 @@ def _projection_chart(dialog: QDialog) -> QWebEngineView | None:
 
 def _wait_for_plotly(qtbot, chart: QWebEngineView) -> None:
     rendered: list[bool] = []
+    active = True
+    timer = QTimer()
+    timer.setSingleShot(True)
+    timer.setInterval(50)
     script = (
         "typeof Plotly !== 'undefined' && "
         "document.querySelector('.plotly-graph-div') !== null"
     )
 
     def check_rendered() -> None:
+        if not active:
+            return
+
         def checked(value: object) -> None:
+            if not active:
+                return
             if value:
                 rendered.append(True)
             else:
-                QTimer.singleShot(50, check_rendered)
+                timer.start()
 
         chart.page().runJavaScript(script, checked)
 
-    check_rendered()
-    qtbot.waitUntil(lambda: bool(rendered), timeout=5000)
+    timer.timeout.connect(check_rendered)
+    try:
+        check_rendered()
+        qtbot.waitUntil(lambda: bool(rendered), timeout=5000)
+    finally:
+        active = False
+        timer.stop()
+
+
+@pytest.mark.parametrize("callback_pending", [False, True])
+def test_plotly_polling_stops_after_timeout(qtbot, monkeypatch, callback_pending):
+    chart = Mock(spec=QWebEngineView)
+    callbacks = []
+
+    def run_javascript(script, callback):
+        callbacks.append(callback)
+        if not callback_pending:
+            callback(False)
+
+    chart.page.return_value.runJavaScript.side_effect = run_javascript
+    wait_until = qtbot.waitUntil
+    monkeypatch.setattr(
+        qtbot, "waitUntil", lambda callback, **kwargs: wait_until(callback, timeout=10)
+    )
+
+    with pytest.raises(TimeoutError):
+        _wait_for_plotly(qtbot, chart)
+
+    # Simulate teardown, including a JavaScript result arriving after timeout.
+    chart.page.side_effect = RuntimeError("chart has been deleted")
+    if callback_pending:
+        callbacks[0](False)
+    qtbot.wait(100)
+    chart.page.assert_called_once()
 
 
 def _open_projection(qtbot, window: MainWindow) -> QDialog:

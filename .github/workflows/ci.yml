@@ -10,6 +10,8 @@ jobs:
 
     env:
       QT_QPA_PLATFORM: offscreen
+      QT_QUICK_BACKEND: software
+      QTWEBENGINE_CHROMIUM_FLAGS: --disable-gpu
 
     steps:
       - name: Check out repository
